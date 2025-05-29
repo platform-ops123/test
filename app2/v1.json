@@ -50,7 +50,7 @@
               "parent": null,
               "properties": {
                 "text": {
-                  "value": "qwertyuio"
+                  "value": "name2"
                 },
                 "visibility": {
                   "value": "{{true}}"
@@ -119,7 +119,7 @@
               },
               "validation": {},
               "createdAt": "2025-05-28T14:04:56.178Z",
-              "updatedAt": "2025-05-28T18:22:07.571Z",
+              "updatedAt": "2025-05-29T20:45:40.354Z",
               "layouts": [
                 {
                   "id": "257af7d4-4efe-4cf0-a916-92d83ae7d690",
