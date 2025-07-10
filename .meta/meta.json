@@ -30,5 +30,13 @@
     "lastpushDate": "2025-06-16T12:16:30.571Z",
     "gitVersionName": "v1",
     "lastCommitUser": "a1 "
+  },
+  "9a4e35ff-ffa9-41da-9721-c90a2bfcd58b": {
+    "gitAppName": "git_app1",
+    "lastCommitMessage": "first push commit",
+    "gitVersionId": "b96ee5de-8c5e-4466-b965-88494b1d6922",
+    "lastpushDate": "2025-07-10T17:55:08.972Z",
+    "gitVersionName": "v1",
+    "lastCommitUser": "a1 "
   }
 }
