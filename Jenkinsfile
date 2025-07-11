@@ -28,7 +28,7 @@ pipeline {
         string(name: 'BRANCH_NAME', defaultValue: 'main', description: 'Branch name (required for SETUP_GIT_CONFIG)')
         string(name: 'GITHUB_APP_ID', defaultValue: '', description: 'GitHub App ID (required for SETUP_GIT_CONFIG)')
         string(name: 'GITHUB_APP_INSTALLATION_ID', defaultValue: '', description: 'GitHub App Installation ID (required for SETUP_GIT_CONFIG)')
-        string(name: 'GITHUB_APP_PRIVATE_KEY', defaultValue: '', description: 'GitHub App Private Key (PEM) (required for SETUP_GIT_CONFIG)')
+        text(name: 'GITHUB_APP_PRIVATE_KEY', defaultValue: '', description: 'GitHub App Private Key (PEM) (required for SETUP_GIT_CONFIG)')
     }
 
     stages {
