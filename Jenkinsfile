@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         TOOLJET_BASE_URL = "${TOOLJET_BASE_URL}" // e.g., http://host.docker.internal:3000
-        TOOLJET_ACCESS_TOKEN = credentials('tooljet-access-token')
+        TOOLJET_ACCESS_TOKEN = credentials('TOOLJET_ACCESS_TOKEN')
     }
 
     parameters {
