@@ -88,15 +88,13 @@ def validate(value, fieldName) {
 }
 
 def setupGitConfig() {
-    def sanitizedKey = params.GITHUB_APP_PRIVATE_KEY.replaceAll('\\r?\\n', '\\\\n')
-
     def payload = [
         organizationId: params.ORG_ID,
         gitUrl: params.GIT_URL,
         branchName: params.BRANCH_NAME,
         githubAppId: params.GITHUB_APP_ID,
         githubAppInstallationId: params.GITHUB_APP_INSTALLATION_ID,
-        githubAppPrivateKey: sanitizedKey
+        githubAppPrivateKey: params.GITHUB_APP_PRIVATE_KEY
     ]
 
     def response = httpRequest(
