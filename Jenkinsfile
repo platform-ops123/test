@@ -27,8 +27,8 @@ pipeline {
         string(name: 'GIT_URL', defaultValue: '', description: 'Git HTTPS URL (required for SETUP_GIT_CONFIG)')
         string(name: 'BRANCH_NAME', defaultValue: 'main', description: 'Branch name (required for SETUP_GIT_CONFIG)')
         string(name: 'GITHUB_APP_ID', defaultValue: '', description: 'GitHub App ID (required for SETUP_GIT_CONFIG)')
-        string(name: 'GITHUB_APP_INSTALL_ID', defaultValue: '', description: 'GitHub App Installation ID (required for SETUP_GIT_CONFIG)')
-        text(name: 'GITHUB_APP_PRIVATE_KEY', defaultValue: '', description: 'GitHub App Private Key in PEM format (required for SETUP_GIT_CONFIG)')
+        string(name: 'GITHUB_APP_INSTALLATION_ID', defaultValue: '', description: 'GitHub App Installation ID (required for SETUP_GIT_CONFIG)')
+        text(name: 'GITHUB_APP_PRIVATE_KEY', defaultValue: '', description: 'GitHub App Private Key (PEM) (required for SETUP_GIT_CONFIG)')
     }
 
     stages {
@@ -37,6 +37,12 @@ pipeline {
                 script {
                     switch (params.ACTION) {
                         case 'SETUP_GIT_CONFIG':
+                            validate(params.ORG_ID, 'ORG_ID')
+                            validate(params.GIT_URL, 'GIT_URL')
+                            validate(params.BRANCH_NAME, 'BRANCH_NAME')
+                            validate(params.GITHUB_APP_ID, 'GITHUB_APP_ID')
+                            validate(params.GITHUB_APP_INSTALLATION_ID, 'GITHUB_APP_INSTALLATION_ID')
+                            validate(params.GITHUB_APP_PRIVATE_KEY, 'GITHUB_APP_PRIVATE_KEY')
                             setupGitConfig()
                             break
                         case 'PUSH_TO_GIT':
@@ -87,7 +93,7 @@ def setupGitConfig() {
         gitUrl: params.GIT_URL,
         branchName: params.BRANCH_NAME,
         githubAppId: params.GITHUB_APP_ID,
-        githubAppInstallationId: params.GITHUB_APP_INSTALL_ID,
+        githubAppInstallationId: params.GITHUB_APP_INSTALLATION_ID,
         githubAppPrivateKey: params.GITHUB_APP_PRIVATE_KEY
     ]
 
