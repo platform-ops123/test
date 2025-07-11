@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        TOOLJET_BASE_URL = "${TOOLJET_BASE_URL}" // e.g., http://host.docker.internal:3000
+        TOOLJET_BASE_URL = credentials('TOOLJET_BASE_URL') // e.g., http://host.docker.internal:3000
         TOOLJET_ACCESS_TOKEN = credentials('TOOLJET_ACCESS_TOKEN')
     }
 
