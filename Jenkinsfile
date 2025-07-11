@@ -88,13 +88,15 @@ def validate(value, fieldName) {
 }
 
 def setupGitConfig() {
+    def sanitizedKey = params.GITHUB_APP_PRIVATE_KEY.replaceAll('\\r?\\n', '\\\\n')
+
     def payload = [
         organizationId: params.ORG_ID,
         gitUrl: params.GIT_URL,
         branchName: params.BRANCH_NAME,
         githubAppId: params.GITHUB_APP_ID,
         githubAppInstallationId: params.GITHUB_APP_INSTALLATION_ID,
-        githubAppPrivateKey: params.GITHUB_APP_PRIVATE_KEY
+        githubAppPrivateKey: sanitizedKey
     ]
 
     def response = httpRequest(
@@ -106,7 +108,7 @@ def setupGitConfig() {
     )
 
     if (response.status != 201) {
-        error "Failed to set up Git config. Status: ${response.status}"
+        error "Failed to set up Git config. Status: ${response.status}. Response: ${response.content}"
     }
 }
 
@@ -122,7 +124,7 @@ def pushToGit(appId, versionId, message) {
     )
 
     if (response.status != 201) {
-        error "Failed to push to Git. Status: ${response.status}"
+        error "Failed to push to Git. Status: ${response.status}. Response: ${response.content}"
     }
 }
 
@@ -138,7 +140,7 @@ def createAppFromGit(appId, orgId) {
     )
 
     if (response.status != 201) {
-        error "Failed to create app from Git. Status: ${response.status}"
+        error "Failed to create app from Git. Status: ${response.status}. Response: ${response.content}"
     }
 }
 
@@ -151,7 +153,7 @@ def syncFromGit(appId) {
     )
 
     if (response.status != 200) {
-        error "Failed to sync from Git. Status: ${response.status}"
+        error "Failed to sync from Git. Status: ${response.status}. Response: ${response.content}"
     }
 }
 
@@ -164,6 +166,6 @@ def deployApp(appId) {
     )
 
     if (response.status != 201) {
-        error "Failed to deploy app. Status: ${response.status}"
+        error "Failed to deploy app. Status: ${response.status}. Response: ${response.content}"
     }
 }
