@@ -4,8 +4,8 @@ pipeline {
   environment {
     BASE_URL = credentials('TOOLJET_BASE_URL')
     TOKEN = credentials('TOOLJET_ACCESS_TOKEN')
-    APP_ID = 'your-app-id-or-slug'
-    VERSION_ID = 'your-version-name'
+    APP_ID = '64b94f2c-ec13-47c6-80bf-912dc940206a'
+    VERSION_ID = 'v1'
   }
 
   stages {
