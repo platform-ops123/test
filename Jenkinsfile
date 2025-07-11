@@ -96,6 +96,9 @@ def setupGitConfig() {
         githubAppInstallationId: params.GITHUB_APP_INSTALLATION_ID,
         githubAppPrivateKey: params.GITHUB_APP_PRIVATE_KEY
     ]
+    println "Sending payload to ToolJet:"
+    println groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(payload))
+
 
     def response = httpRequest(
         httpMode: 'POST',
