@@ -2,38 +2,42 @@ pipeline {
     agent any
 
     environment {
-        TOOLJET_BASE_URL = "${TOOLJET_BASE_URL}" // e.g., 'http://host.docker.internal:3000'
-        TOOLJET_ACCESS_TOKEN = credentials('TOOLJET_ACCESS_TOKEN')
-        ORGANIZATION_ID = "${ORGANIZATION_ID}" // ToolJet Organization ID or slug
-        GIT_URL = "${GIT_URL}" // GitHub Repo URL
-        BRANCH_NAME = "${BRANCH_NAME}" // e.g., 'main'
-        GITHUB_APP_ID = "${GITHUB_APP_ID}"
-        GITHUB_APP_INSTALLATION_ID = "${GITHUB_APP_INSTALLATION_ID}"
-        GITHUB_APP_PRIVATE_KEY = credentials('github-app-private-key') // store as secret text
+        TOOLJET_BASE_URL = "${TOOLJET_BASE_URL}" // e.g., http://host.docker.internal:3000
+        TOOLJET_ACCESS_TOKEN = credentials('tooljet-access-token')
     }
 
     parameters {
         choice(
             name: 'ACTION',
-            choices: ['SYNC_FROM_GIT', 'PUSH_TO_GIT', 'CREATE_FROM_GIT', 'DEPLOY', 'SETUP_GIT_CONFIG'],
+            choices: [
+                'SETUP_GIT_CONFIG',
+                'PUSH_TO_GIT',
+                'CREATE_FROM_GIT',
+                'SYNC_FROM_GIT',
+                'DEPLOY'
+            ],
             description: 'Select the Git sync action to perform'
         )
-        string(name: 'APP_ID', defaultValue: '', description: 'ToolJet App ID or slug')
-        string(name: 'VERSION_ID', defaultValue: '', description: 'Version ID or Name (for PUSH_TO_GIT)')
-        string(name: 'COMMIT_MESSAGE', defaultValue: 'Automated commit from Jenkins', description: 'Git commit message')
+
+        string(name: 'APP_ID', defaultValue: '', description: 'App ID or slug (required for PUSH_TO_GIT, SYNC_FROM_GIT, DEPLOY)')
+        string(name: 'VERSION_ID', defaultValue: '', description: 'Version ID or name (required for PUSH_TO_GIT)')
+        string(name: 'COMMIT_MESSAGE', defaultValue: 'Automated commit from Jenkins', description: 'Commit message for PUSH_TO_GIT')
+
+        string(name: 'ORG_ID', defaultValue: '', description: 'Organization ID (required for SETUP_GIT_CONFIG, CREATE_FROM_GIT)')
+        string(name: 'GIT_URL', defaultValue: '', description: 'Git HTTPS URL (required for SETUP_GIT_CONFIG)')
+        string(name: 'BRANCH_NAME', defaultValue: 'main', description: 'Branch name (required for SETUP_GIT_CONFIG)')
+        string(name: 'GITHUB_APP_ID', defaultValue: '', description: 'GitHub App ID (required for SETUP_GIT_CONFIG)')
+        string(name: 'GITHUB_APP_INSTALL_ID', defaultValue: '', description: 'GitHub App Installation ID (required for SETUP_GIT_CONFIG)')
+        text(name: 'GITHUB_APP_PRIVATE_KEY', defaultValue: '', description: 'GitHub App Private Key in PEM format (required for SETUP_GIT_CONFIG)')
     }
 
     stages {
-        stage('Run Selected Action') {
+        stage('Run ToolJet GitSync Action') {
             steps {
                 script {
                     switch (params.ACTION) {
                         case 'SETUP_GIT_CONFIG':
-                            setupGitConfiguration()
-                            break
-                        case 'SYNC_FROM_GIT':
-                            validate(params.APP_ID, 'APP_ID')
-                            syncFromGit(params.APP_ID)
+                            setupGitConfig()
                             break
                         case 'PUSH_TO_GIT':
                             validate(params.APP_ID, 'APP_ID')
@@ -42,14 +46,19 @@ pipeline {
                             break
                         case 'CREATE_FROM_GIT':
                             validate(params.APP_ID, 'APP_ID')
-                            createAppFromGit(params.APP_ID)
+                            validate(params.ORG_ID, 'ORG_ID')
+                            createAppFromGit(params.APP_ID, params.ORG_ID)
+                            break
+                        case 'SYNC_FROM_GIT':
+                            validate(params.APP_ID, 'APP_ID')
+                            syncFromGit(params.APP_ID)
                             break
                         case 'DEPLOY':
                             validate(params.APP_ID, 'APP_ID')
                             deployApp(params.APP_ID)
                             break
                         default:
-                            error "❌ Invalid action: ${params.ACTION}"
+                            error "Invalid action: ${params.ACTION}"
                     }
                 }
             }
@@ -58,32 +67,28 @@ pipeline {
 
     post {
         success {
-            echo "✅ ToolJet GitSync operation '${params.ACTION}' completed successfully."
+            echo "✅ ToolJet GitSync action '${params.ACTION}' completed successfully."
         }
         failure {
-            echo "❌ ToolJet GitSync operation '${params.ACTION}' failed. Check logs above for details."
+            echo "❌ ToolJet GitSync action '${params.ACTION}' failed. Check logs above."
         }
     }
 }
 
-// --- Utilities ---
-def validate(value, field) {
+def validate(value, fieldName) {
     if (!value?.trim()) {
-        error "❌ ${field} is required for '${params.ACTION}'"
+        error "Missing required parameter: ${fieldName}"
     }
 }
 
-// --- Setup Git Configuration ---
-def setupGitConfiguration() {
-    echo "🔧 Setting up Git config..."
-
+def setupGitConfig() {
     def payload = [
-        organizationId           : env.ORGANIZATION_ID,
-        gitUrl                   : env.GIT_URL,
-        branchName               : env.BRANCH_NAME,
-        githubAppId              : env.GITHUB_APP_ID,
-        githubAppInstallationId : env.GITHUB_APP_INSTALLATION_ID,
-        githubAppPrivateKey     : env.GITHUB_APP_PRIVATE_KEY
+        organizationId: params.ORG_ID,
+        gitUrl: params.GIT_URL,
+        branchName: params.BRANCH_NAME,
+        githubAppId: params.GITHUB_APP_ID,
+        githubAppInstallationId: params.GITHUB_APP_INSTALL_ID,
+        githubAppPrivateKey: params.GITHUB_APP_PRIVATE_KEY
     ]
 
     def response = httpRequest(
@@ -94,36 +99,13 @@ def setupGitConfiguration() {
         requestBody: groovy.json.JsonOutput.toJson(payload)
     )
 
-    if (response.status == 201) {
-        echo "✅ Git configuration set successfully."
-    } else {
-        error "❌ Failed to set Git configuration. Status: ${response.status}"
+    if (response.status != 201) {
+        error "Failed to set up Git config. Status: ${response.status}"
     }
 }
 
-// --- Sync App from Git ---
-def syncFromGit(appId) {
-    echo "🔄 Syncing app '${appId}' from Git..."
-
-    def response = httpRequest(
-        httpMode: 'PUT',
-        url: "${env.TOOLJET_BASE_URL}/api/ext/apps/${appId}?createMode=git",
-        contentType: 'APPLICATION_JSON',
-        customHeaders: [[name: 'Authorization', value: "Basic ${env.TOOLJET_ACCESS_TOKEN}"]]
-    )
-
-    if (response.status == 200) {
-        echo "✅ App synced from Git."
-    } else {
-        error "❌ Failed to sync app from Git. Status: ${response.status}"
-    }
-}
-
-// --- Push Version to Git ---
-def pushToGit(appId, versionId, commitMessage) {
-    echo "📤 Pushing version '${versionId}' of app '${appId}' to Git..."
-
-    def payload = [commitMessage: commitMessage]
+def pushToGit(appId, versionId, message) {
+    def payload = [commitMessage: message]
 
     def response = httpRequest(
         httpMode: 'POST',
@@ -133,21 +115,13 @@ def pushToGit(appId, versionId, commitMessage) {
         requestBody: groovy.json.JsonOutput.toJson(payload)
     )
 
-    if (response.status == 201) {
-        echo "✅ App version pushed to Git."
-    } else {
-        error "❌ Failed to push to Git. Status: ${response.status}"
+    if (response.status != 201) {
+        error "Failed to push to Git. Status: ${response.status}"
     }
 }
 
-// --- Create App from Git ---
-def createAppFromGit(appId) {
-    echo "🆕 Creating app '${appId}' from Git..."
-
-    def payload = [
-        appId         : appId,
-        organizationId: env.ORGANIZATION_ID
-    ]
+def createAppFromGit(appId, orgId) {
+    def payload = [appId: appId, organizationId: orgId]
 
     def response = httpRequest(
         httpMode: 'POST',
@@ -157,18 +131,25 @@ def createAppFromGit(appId) {
         requestBody: groovy.json.JsonOutput.toJson(payload)
     )
 
-    if (response.status == 201) {
-        def responseJson = readJSON text: response.content
-        echo "✅ App created. ID: ${responseJson.id}"
-    } else {
-        error "❌ Failed to create app from Git. Status: ${response.status}"
+    if (response.status != 201) {
+        error "Failed to create app from Git. Status: ${response.status}"
     }
 }
 
-// --- Deploy App ---
-def deployApp(appId) {
-    echo "🚀 Deploying app '${appId}'..."
+def syncFromGit(appId) {
+    def response = httpRequest(
+        httpMode: 'PUT',
+        url: "${env.TOOLJET_BASE_URL}/api/ext/apps/${appId}?createMode=git",
+        contentType: 'APPLICATION_JSON',
+        customHeaders: [[name: 'Authorization', value: "Basic ${env.TOOLJET_ACCESS_TOKEN}"]]
+    )
 
+    if (response.status != 200) {
+        error "Failed to sync from Git. Status: ${response.status}"
+    }
+}
+
+def deployApp(appId) {
     def response = httpRequest(
         httpMode: 'POST',
         url: "${env.TOOLJET_BASE_URL}/api/ext/apps/${appId}/git-sync/release",
@@ -176,9 +157,7 @@ def deployApp(appId) {
         customHeaders: [[name: 'Authorization', value: "Basic ${env.TOOLJET_ACCESS_TOKEN}"]]
     )
 
-    if (response.status == 201) {
-        echo "✅ App deployed to production."
-    } else {
-        error "❌ Failed to deploy app. Status: ${response.status}"
+    if (response.status != 201) {
+        error "Failed to deploy app. Status: ${response.status}"
     }
 }
