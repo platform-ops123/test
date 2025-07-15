@@ -170,6 +170,26 @@
               "openIn": "new_tab",
               "type": "default",
               "appId": ""
+            },
+            {
+              "id": "1ee31816-1878-4124-a652-c7ddf67c164b",
+              "name": "Page 1",
+              "handle": "page-1",
+              "index": 999,
+              "disabled": null,
+              "hidden": null,
+              "icon": null,
+              "createdAt": "2025-07-15T01:27:06.013Z",
+              "updatedAt": "2025-07-15T01:27:06.013Z",
+              "autoComputeLayout": true,
+              "appVersionId": "601b684b-99af-4da7-91be-ebee893cff23",
+              "pageGroupIndex": 2,
+              "pageGroupId": null,
+              "isPageGroup": false,
+              "url": null,
+              "openIn": "new_tab",
+              "type": "default",
+              "appId": ""
             }
           ],
           "events": [],
